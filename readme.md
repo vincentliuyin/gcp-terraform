@@ -24,5 +24,5 @@ This repository contains various solutions for setting up infrastructure on Goog
    ```sh
    terraform destroy
 
-For detailed documentation and advanced use-cases, please refer to the official Terraform documentation.
+For detailed documentation and advanced use-cases, please refer to the [official Terraform documentation](https://developer.hashicorp.com/terraform/docs).
 
