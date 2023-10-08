@@ -34,6 +34,7 @@ graph TB
   C --> D
   B --> D
   D --> E
+  E --> F
 ```
 
 
