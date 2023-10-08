@@ -1,5 +1,5 @@
-#Infrastructure Setup with Terraform
-##1. Diagram
+# Infrastructure Setup with Terraform
+## 1. Diagram
 The following diagram represents the infrastructure setup defined by the Terraform code:
 ```mermaid
 graph TB
@@ -16,11 +16,11 @@ graph TB
 ```
 
 
-##2. Overview
+## 2. Overview
 
 This Terraform setup is designed to create a basic infrastructure on Google Cloud Platform, which includes a VPC network, a subnet, a VM instance, a firewall, and a DNS record. 
 
-##3. Workflow
+## 3. Workflow
 
 - **Network Creation:** A VPC network and a subnet are created to facilitate the communication between the resources.
 - **VM Instance:** A VM instance is deployed within the created subnet and is accessible via SSH.
