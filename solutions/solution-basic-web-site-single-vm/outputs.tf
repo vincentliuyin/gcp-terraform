@@ -5,5 +5,5 @@ output "vm_external_ip" {
 
 output "website_domain_name" {
   description = "The DNS zone name"
-  value       = google_dns_record_set.dns_record.name
+  value       = trimsuffix(google_dns_record_set.dns_record.name,".")
 }

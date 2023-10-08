@@ -53,11 +53,6 @@ resource "google_compute_instance" "vm" {
 SCRIPT
 }
 
-# resource "google_dns_managed_zone" "dns_zone" {
-#   name        = "${var.name_prefix}-zone"
-#   dns_name    = var.domain_name
-#   description = "DNS Zone for ${var.domain_name}"
-# }
 
 resource "google_dns_record_set" "dns_record" {
   name         = "www.${var.domain_name}"
