@@ -41,34 +41,28 @@ resource "google_compute_instance" "vm" {
   }
 
   metadata = {
-    ssh-keys = "username:${file(var.public_ssh_key_path)}"
+    ssh-keys = "${var.ssh_username}:${file(var.public_ssh_key_path)}"
   }
 
   metadata_startup_script = <<SCRIPT
     #!/bin/bash
     apt update
-    apt install -y python3 python3-pip
-    pip3 install Flask
-    echo 'from Flask import Flask
-app = Flask(__name__)
-
-@app.route("/vm")
-def hello():
-    return "Hello from VM!"' > app.py
-    nohup python3 app.py &
+    apt install -y python3
+    echo '<!DOCTYPE html><html><body><h1>Hello from ${var.ssh_username} VM!</h1></body></html>' > index.html
+    python3 -m http.server 80 &
 SCRIPT
 }
 
-resource "google_dns_managed_zone" "dns_zone" {
-  name        = "${var.name_prefix}-zone"
-  dns_name    = var.domain_name
-  description = "DNS Zone for ${var.domain_name}"
-}
+# resource "google_dns_managed_zone" "dns_zone" {
+#   name        = "${var.name_prefix}-zone"
+#   dns_name    = var.domain_name
+#   description = "DNS Zone for ${var.domain_name}"
+# }
 
 resource "google_dns_record_set" "dns_record" {
   name         = "www.${var.domain_name}"
   type         = "A"
   ttl          = 300
-  managed_zone = google_dns_managed_zone.dns_zone.name
+  managed_zone = "${var.managed_zone}"
   rrdatas      = [google_compute_instance.vm.network_interface[0].access_config[0].nat_ip]
 }
