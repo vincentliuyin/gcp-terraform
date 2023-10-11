@@ -1,6 +1,7 @@
 # Infrastructure Setup with Terraform
 Before deploying this solution, ensure you have the following prerequisites:
-
+## Prerequisites:
+- **Project and related permission**: Ensure that a project was created in advance; Related API should be enabled; ServiceAccount with suitable permission should be created, and keys were downloaded to the terraform workstation in advance, which will be referenced in pervider.tf file.
 - **Hosted Web Zone**: Ensure that a hosted web zone is created in Google Cloud DNS for your domain.
 - **Domain Name**: Ensure that you have a registered domain name and it is configured to use the name servers provided by Google Cloud DNS.
 - **Basic knowledge**: Basic knowledge of GCP and terraform
