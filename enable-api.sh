@@ -9,7 +9,8 @@ for api in compute.googleapis.com \
            pubsub.googleapis.com \
            cloudbuild.googleapis.com \
            vision.googleapis.com \
-           speech.googleapis.com
+           speech.googleapis.com  \
+           dns.googleapis.com
 do
   gcloud services enable "$api" --project="$PROJECT_ID"
 done
