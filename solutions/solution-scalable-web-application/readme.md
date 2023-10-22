@@ -11,8 +11,6 @@ This Terraform solution is designed to deploy a scalable web hosting infrastruct
   
 - **Domain Name**: Ensure that you have a registered domain name and it is configured to use the name servers provided by Google Cloud DNS.
   
-- **GCP cloud CLI**: Ensure that the GCP cloud CLI is installed.
-  
 - **Basic knowledge**: Have a basic understanding of GCP and Terraform.
 
 ## 1. Usage:
