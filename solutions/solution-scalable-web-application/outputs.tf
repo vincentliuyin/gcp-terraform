@@ -10,3 +10,14 @@
 #   ]
 #   description = "The public IPs of the instances in the instance group."
 # }
+
+output "load_balancer_ip" {
+  value       = google_compute_global_address.static_ip.address
+  description = "The public IP address of the HTTP(S) Load Balancer."
+}
+
+// Output for the URL to access the VMs
+output "vm_url" {
+  value       = "http://${google_compute_global_address.static_ip.address}/test"
+  description = "The URL for accessing the VMs via the HTTP(S) Load Balancer."
+}

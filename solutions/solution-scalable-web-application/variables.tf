@@ -27,3 +27,8 @@ variable "ssh_username" {
   type        = string
   description = "The SSH username to be used for the VM"
 }
+
+variable "target_size" {
+  description = "The target size of the instance group"
+  type        = number
+}
