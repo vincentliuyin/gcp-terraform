@@ -1,8 +1,5 @@
 resource "google_container_cluster" "primary" {
   name     = "my-gke-cluster"
-  resource_labels = {
-    deletion_protection = var.deletion_protection ? "true" : "false"
-  }
 
   node_pool {
     name       = "pool1"

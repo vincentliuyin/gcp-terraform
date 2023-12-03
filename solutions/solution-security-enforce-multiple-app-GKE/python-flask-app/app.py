@@ -12,4 +12,4 @@ def hello():
     return f"<!DOCTYPE html><html><body><h1>This is APP: {app_name}</h1><h1>Hello from POD: {hostname}</h1>{web_content}</body></html>"
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=8080)

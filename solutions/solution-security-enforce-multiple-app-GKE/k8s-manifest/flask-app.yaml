@@ -1,7 +1,26 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: app1
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: app1-quota
+  namespace: app1
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: flask-app-service
+  namespace: app1
 spec:
   type: NodePort
   selector:
@@ -15,6 +34,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ubuntu-flask-deployment
+  namespace: app1
 spec:
   replicas: 1
   selector:
@@ -32,7 +52,7 @@ spec:
         - containerPort: 80
         env:
         - name: APP_NAME
-          value: "<p>APP1</p>" # Replace with your APP NAme
+          value: "<p>APP1</p>" # Replace with your APP Name
         - name: WEB_CONTENT
           value: "<p>Additional web content here</p>" # Replace with your content
       volumes:

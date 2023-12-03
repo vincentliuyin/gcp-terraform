@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: flask-app-network-policy
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app: ubuntu-flask
+  policyTypes:
+  - Ingress
+  ingress:
+  - from: []
+    ports:
+    - protocol: TCP
+      port: {{ .Values.networkPolicy.port }}
