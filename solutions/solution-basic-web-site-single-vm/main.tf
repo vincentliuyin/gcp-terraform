@@ -36,7 +36,7 @@ resource "google_compute_instance" "vm" {
   network_interface {
     subnetwork = google_compute_subnetwork.subnet.name
     access_config {
-      // Ephemeral IP
+ 
     }
   }
 

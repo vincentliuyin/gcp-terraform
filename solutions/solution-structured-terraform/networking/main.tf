@@ -8,4 +8,4 @@ resource "google_compute_subnetwork" "subnet" {
   ip_cidr_range = var.subnet_ip_cidr
 }
 
-# Add more subnetwork resources as needed
+
