@@ -2,7 +2,7 @@ data "terraform_remote_state" "network" {
   backend = "gcs"
   config = {
     bucket = "terraform-state-vincent-demo"
-    prefix = "network/state"
+    prefix = "network/state/${terraform.workspace}"
   }
 }
 
@@ -10,7 +10,7 @@ data "terraform_remote_state" "storage" {
   backend = "gcs"
   config = {
     bucket = "terraform-state-vincent-demo"
-    prefix = "storage/state"
+    prefix = "storage/state/${terraform.workspace}"
   }
 }
 
@@ -18,13 +18,13 @@ data "terraform_remote_state" "security" {
   backend = "gcs"
   config = {
     bucket = "terraform-state-vincent-demo"
-    prefix = "security/state"
+    prefix = "security/state/${terraform.workspace}"
   }
 }
 
 # VM Instance
 resource "google_compute_instance" "vm_instance" {
-  name         = var.vm_name
+  name         = "vincent-demo-vm-${terraform.workspace}"
   machine_type = "f1-micro"
   zone         = "us-central1-c"
 
@@ -39,7 +39,7 @@ resource "google_compute_instance" "vm_instance" {
     subnetwork = data.terraform_remote_state.network.outputs.subnet_ids[0]
 
     access_config {
-      // Ephemeral IP for internet access
+
     }
   }
 

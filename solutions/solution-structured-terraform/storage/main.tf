@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "bucket" {
-  name          = var.bucket_name
+  name          = "vincent-demo-bucket-${terraform.workspace}"
   location      = "US"
   force_destroy = true
 

@@ -3,13 +3,13 @@ data "terraform_remote_state" "network" {
   backend = "gcs"
   config = {
     bucket = "terraform-state-vincent-demo"
-    prefix = "network/state"
+    prefix = "network/state/${terraform.workspace}"
   }
 }
 
 # Firewall resource
 resource "google_compute_firewall" "firewall" {
-  name    = "vincent-demo-firewall"
+  name    = "vincent-demo-firewall-${terraform.workspace}"
   network = data.terraform_remote_state.network.outputs.vpc_id
 
   allow {
