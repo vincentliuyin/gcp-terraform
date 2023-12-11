@@ -206,30 +206,65 @@ data "terraform_remote_state" "network" {
 
 # Firewall resource
 resource "google_compute_firewall" "firewall" {
-  name    = "${var.name_prefix}-firewall"
+  name    = "vincent-demo-firewall"
   network = data.terraform_remote_state.network.outputs.vpc_id
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "80"]
+    ports    = ["22", "80", "8080"]
   }
 
-  target_tags   = ["web"]
+  target_tags   = ["${var.firewall_target_tag}"]
   source_ranges = ["0.0.0.0/0"]
 }
 
 File: ./security/variables.tf
-variable "name_prefix" {
-  description = "Prefix for the name of resources"
+variable "firewall_target_tag" {
+  description = "Target tag for the firewall rule"
   type        = string
-  default     = "vincent-demo"
+  default     = "web"
 }
 
-
-
 File: ./security/outputs.tf
-empty
+output "firewall_target_tag" {
+  value       = var.firewall_target_tag
+  description = "The target tag used in the firewall rule."
+}
 
+File: ./compute/app.py
+from flask import Flask
+import socket
+import os
+import requests
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    # Get the hostname
+    hostname = socket.gethostname()
+    
+    # Get the cloud storage link from the environment variable
+    Storage_link = os.getenv('STORAGE_LINK')
+
+    # Initialize web_content
+    web_content = "storage content has problem"
+
+    # Try to fetch content from cloud storage link if available
+    if Storage_link:
+        try:
+            response = requests.get(Storage_link)
+            if response.status_code == 200:
+                web_content = f"<p>{response.text}</p><p>(Content fetched from cloud storage)</p>"
+            else:
+                web_content += " (unable to fetch)"
+        except Exception as e:
+            web_content += f" (Error: {e})"
+
+    return f"<!DOCTYPE html><html><body><h1>Flask App on: {hostname}</h1>{web_content}</body></html>"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
 File: ./compute/provider.tf
 terraform {
   required_providers {
@@ -253,11 +288,124 @@ provider "google" {
 }
 
 File: ./compute/main.tf
-empty
+data "terraform_remote_state" "network" {
+  backend = "gcs"
+  config = {
+    bucket = "terraform-state-vincent-demo"
+    prefix = "network/state"
+  }
+}
+
+data "terraform_remote_state" "storage" {
+  backend = "gcs"
+  config = {
+    bucket = "terraform-state-vincent-demo"
+    prefix = "storage/state"
+  }
+}
+
+data "terraform_remote_state" "security" {
+  backend = "gcs"
+  config = {
+    bucket = "terraform-state-vincent-demo"
+    prefix = "security/state"
+  }
+}
+
+# VM Instance
+resource "google_compute_instance" "vm_instance" {
+  name         = var.vm_name
+  machine_type = "f1-micro"
+  zone         = "us-central1-c"
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2004-lts"
+    }
+  }
+
+  network_interface {
+    network    = data.terraform_remote_state.network.outputs.vpc_id
+    subnetwork = data.terraform_remote_state.network.outputs.subnet_ids[0]
+
+    access_config {
+      // Ephemeral IP for internet access
+    }
+  }
+
+metadata = {
+  ssh-keys = "${var.ssh_username}:${file(var.public_ssh_key_path)}"
+  "startup-script" = <<EOF
+    #!/bin/bash
+    apt update
+    apt install -y python3 python3-pip
+    pip3 install Flask requests
+
+    cat <<EOPY > /home/vincent/app.py
+    from flask import Flask
+    import socket
+    import os
+    import requests
+
+    app = Flask(__name__)
+
+    @app.route('/')
+    def hello():
+        hostname = socket.gethostname()
+        storage_link = os.getenv('STORAGE_LINK')
+        web_content = "Storage content has problem"
+
+        if storage_link:
+            try:
+                response = requests.get(storage_link)
+                if response.status_code == 200:
+                    web_content = f"<p>{response.text}</p><p>(Content fetched from cloud storage)</p>"
+                else:
+                    web_content += " (unable to fetch)"
+            except Exception as e:
+                web_content += f" (Error: {e})"
+
+        return f"<!DOCTYPE html><html><body><h1>Flask App on: {hostname}</h1>{web_content}</body></html>"
+
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=8080)
+    EOPY
+
+    export STORAGE_LINK=${data.terraform_remote_state.storage.outputs.uploaded_file_url}
+    nohup python3 /home/vincent/app.py &
+  EOF
+}
+
+
+#   tags = [data.terraform_remote_state.security.outputs.firewall_target_tag]
+  tags = ["web"]
+}
+
+
+
 
 File: ./compute/variables.tf
-empty
+variable "vm_name" {
+  description = "Name of the VM instance"
+  type        = string
+  default     = "vincent-demo-vm"
+}
+
+variable "public_ssh_key_path" {
+  description = "Path to the public SSH key"
+  type        = string
+  default     = "/home/vliu/.ssh/id_ed25519.pub"
+}
+
+variable "ssh_username" {
+  description = "SSH username"
+  type        = string
+  default     = "vincent"
+}
 
 File: ./compute/outputs.tf
-empty
-
+# Outputs
+output "vm_instance_public_ip" {
+  value       = google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip
+  description = "Public IP address of the VM instance"
+}
