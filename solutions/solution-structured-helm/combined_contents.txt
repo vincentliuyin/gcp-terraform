@@ -1,0 +1,263 @@
+File: ./networking/provider.tf
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "5.8.0"
+    }
+  }
+
+  backend "gcs" {
+    bucket  = "terraform-state-vincent-demo"
+    prefix  = "network/state"
+  }
+}
+
+provider "google" {
+  credentials = file("/home/vliu/gcp-key/gcp-learning-401106-860e4685de9d.json")
+  project     = "gcp-learning-401106"
+  region      = "us-central1"
+  zone        = "us-central1-c"
+}
+
+File: ./networking/main.tf
+data "google_compute_network" "existing_vpc" {
+  name = var.vpc_name
+}
+
+resource "google_compute_subnetwork" "subnet" {
+  name          = "subnet-name"
+  network       = data.google_compute_network.existing_vpc.id
+  ip_cidr_range = "10.0.1.0/24"
+  region        = var.region
+}
+
+# Add more subnetwork resources as needed
+
+File: ./networking/variables.tf
+variable "vpc_name" {
+  description = "The name of the existing VPC."
+  type        = string
+  default     = "vpc-vincent-demo"
+}
+
+variable "region" {
+  description = "The region where to create the subnets."
+  type        = string
+  default     = "us-central1"
+}
+
+# Add more variables if needed
+
+File: ./networking/outputs.tf
+output "vpc_id" {
+  value       = data.google_compute_network.existing_vpc.id
+  description = "The ID of the existing VPC."
+}
+
+output "subnet_ids" {
+  value       = [google_compute_subnetwork.subnet.id]
+  description = "A list of IDs of the created subnets."
+}
+
+File: ./storage/provider.tf
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "5.8.0"
+    }
+  }
+
+  backend "gcs" {
+    bucket  = "terraform-state-vincent-demo"
+    prefix  = "storage/state"
+  }
+}
+
+provider "google" {
+  credentials = file("/home/vliu/gcp-key/gcp-learning-401106-860e4685de9d.json")
+  project     = "gcp-learning-401106"
+  region      = "us-central1"
+  zone        = "us-central1-c"
+}
+
+File: ./storage/main.tf
+resource "google_storage_bucket" "bucket" {
+  name          = var.bucket_name
+  location      = "US"
+  force_destroy = true
+
+  uniform_bucket_level_access = true
+}
+
+resource "google_storage_bucket_iam_binding" "public_access" {
+  bucket = google_storage_bucket.bucket.name
+  role   = "roles/storage.objectViewer"
+
+  members = [
+    "allUsers",
+  ]
+}
+
+resource "local_file" "example" {
+  content  = var.cloud_storage_content
+  filename = "${path.module}/example.txt"
+}
+
+resource "null_resource" "upload_file" {
+  depends_on = [google_storage_bucket.bucket, local_file.example]
+
+  provisioner "local-exec" {
+    command = <<EOF
+      gsutil cp ${local_file.example.filename} gs://${google_storage_bucket.bucket.name}/
+      rm ${local_file.example.filename}
+    EOF
+  }
+}
+
+File: ./storage/variables.tf
+variable "bucket_name" {
+  description = "The name of the Google Cloud Storage bucket."
+  type        = string
+  default     = "vincent-demo-bucket"
+}
+
+variable "cloud_storage_content" {
+  description = "The content to be written to the cloud storage file"
+  type        = string
+  default     = "Hello from GCP cloud storage"
+}
+File: ./storage/outputs.tf
+output "uploaded_file_url" {
+  value       = "https://storage.googleapis.com/${google_storage_bucket.bucket.name}/example.txt"
+  description = "The URL of the uploaded file."
+}
+
+File: ./terraform-state-bucket/provider.tf
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "5.8.0"
+    }
+  }
+}
+
+provider "google" {
+  credentials = file("/home/vliu/gcp-key/gcp-learning-401106-860e4685de9d.json")
+  project     = "gcp-learning-401106"
+  region      = "us-central1"
+  zone        = "us-central1-c"
+}
+
+File: ./terraform-state-bucket/main.tf
+resource "google_storage_bucket" "terraform_state" {
+  name          = "terraform-state-vincent-demo"
+  location      = "US"
+  force_destroy = true
+
+  versioning {
+    enabled = true
+  }
+
+
+  labels = {
+    devoteam = "true"
+  }
+}
+
+File: ./terraform-state-bucket/outputs.tf
+output "bucket_name" {
+  value = google_storage_bucket.terraform_state.name
+}
+
+File: ./security/provider.tf
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "5.8.0"
+    }
+  }
+
+  backend "gcs" {
+    bucket  = "terraform-state-vincent-demo"
+    prefix  = "security/state"
+  }
+}
+
+provider "google" {
+  credentials = file("/home/vliu/gcp-key/gcp-learning-401106-860e4685de9d.json")
+  project     = "gcp-learning-401106"
+  region      = "us-central1"
+  zone        = "us-central1-c"
+}
+
+File: ./security/main.tf
+# Access the remote state
+data "terraform_remote_state" "network" {
+  backend = "gcs"
+  config = {
+    bucket = "terraform-state-vincent-demo"
+    prefix = "network/state"
+  }
+}
+
+# Firewall resource
+resource "google_compute_firewall" "firewall" {
+  name    = "${var.name_prefix}-firewall"
+  network = data.terraform_remote_state.network.outputs.vpc_id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "80"]
+  }
+
+  target_tags   = ["web"]
+  source_ranges = ["0.0.0.0/0"]
+}
+
+File: ./security/variables.tf
+variable "name_prefix" {
+  description = "Prefix for the name of resources"
+  type        = string
+  default     = "vincent-demo"
+}
+
+
+
+File: ./security/outputs.tf
+empty
+
+File: ./compute/provider.tf
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "5.8.0"
+    }
+  }
+
+  backend "gcs" {
+    bucket  = "terraform-state-vincent-demo"
+    prefix  = "compute/state"
+  }
+}
+
+provider "google" {
+  credentials = file("/home/vliu/gcp-key/gcp-learning-401106-860e4685de9d.json")
+  project     = "gcp-learning-401106"
+  region      = "us-central1"
+  zone        = "us-central1-c"
+}
+
+File: ./compute/main.tf
+empty
+
+File: ./compute/variables.tf
+empty
+
+File: ./compute/outputs.tf
+empty
+
